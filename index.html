@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiwi · 学猫语</title>
+<style>
+  :root { --bg:#fff8ee; --card:#fff; --accent:#f08a24; --text:#3b2f2f; --muted:#8a7a70; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"PingFang SC",sans-serif; background:var(--bg); color:var(--text); }
+  header { text-align:center; padding:28px 16px 8px; }
+  header h1 { margin:0; font-size:2rem; }
+  header p { color:var(--muted); margin:6px 0 0; }
+  nav { display:flex; justify-content:center; gap:8px; padding:16px; flex-wrap:wrap; }
+  nav button { border:2px solid var(--accent); background:#fff; color:var(--accent); padding:8px 18px; border-radius:20px; font-size:1rem; cursor:pointer; }
+  nav button.active { background:var(--accent); color:#fff; }
+  main { max-width:760px; margin:0 auto; padding:0 16px 48px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .card { background:var(--card); border-radius:14px; padding:16px; box-shadow:0 2px 8px #0001; }
+  .card .emoji { font-size:2rem; }
+  .card h3 { margin:6px 0 4px; }
+  .card p { margin:0; color:var(--muted); font-size:.95rem; line-height:1.5; }
+  .card button { margin-top:10px; border:none; background:var(--accent); color:#fff; padding:6px 14px; border-radius:12px; cursor:pointer; }
+  .quiz-q { font-size:1.2rem; margin:8px 0 16px; }
+  .opt { display:block; width:100%; text-align:left; margin:8px 0; padding:12px; border:2px solid #eadccc; background:#fff; border-radius:12px; font-size:1rem; cursor:pointer; }
+  .opt.right { border-color:#3a9d5d; background:#e8f7ee; }
+  .opt.wrong { border-color:#d64545; background:#fdeaea; }
+  .next { margin-top:12px; background:var(--accent); color:#fff; border:none; padding:10px 22px; border-radius:20px; cursor:pointer; font-size:1rem; }
+  .hidden { display:none; }
+  .score { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐱 Kiwi · 学猫语</h1>
+  <p>听懂你家猫主子到底在说什么</p>
+</header>
+<nav>
+  <button data-tab="sounds" class="active">叫声词典</button>
+  <button data-tab="body">肢体语言</button>
+  <button data-tab="quiz">小测验</button>
+</nav>
+<main>
+  <section id="sounds" class="grid"></section>
+  <section id="body" class="grid hidden"></section>
+  <section id="quiz" class="hidden"></section>
+</main>
+
+<script>
+const sounds = [
+  { e:"😺", n:"短促的“喵”", m:"打招呼：你好呀 / 我回来了。", p:700, d:0.45 },
+  { e:"😿", n:"拖长的“喵——”", m:"要求：饿了、想开门、想让你关注它。", p:560, d:1.1 },
+  { e:"😻", n:"咕噜咕噜", m:"通常是放松满足；有时也用来自我安抚（受伤或紧张时）。", d:2.0, type:"purr" },
+  { e:"🐦", n:"“咔咔咔”颤音", m:"看到鸟或虫子，兴奋又够不着。", p:1400, d:0.5, trem:true },
+  { e:"🙀", n:"低沉嚎叫", m:"不安、领地冲突或身体不适，别靠太近。", p:330, d:1.4, type:"yowl" },
+  { e:"😾", n:"哈气 / 嘶嘶", m:"警告：我害怕了，请保持距离。", d:0.6, type:"hiss" },
+  { e:"🐱", n:"“叽”“咕”轻叫", m:"猫妈妈叫小猫的语言，亲昵地叫你跟上它。", p:900, d:0.2 }
+];
+const body = [
+  { e:"⬆️", n:"尾巴竖直，尖端微弯", m:"心情很好，见到你很开心。" },
+  { e:"🐈", n:"尾巴炸毛成“瓶刷”", m:"受到惊吓或极度愤怒。" },
+  { e:"🌀", n:"尾巴快速甩动", m:"烦躁、不耐烦，别再摸了。" },
+  { e:"😌", n:"慢慢眨眼", m:"“猫之吻”：信任你，你也可以慢眨回去。" },
+  { e:"👂", n:"耳朵压平向后", m:"害怕或准备打架（飞机耳）。" },
+  { e:"🍞", n:"踩奶", m:"回到小时候的安全感，非常放松。" },
+  { e:"🫳", n:"头顶蹭你", m:"标记气味：你是我的人。" },
+  { e:"🤸", n:"露肚皮", m:"极度信任，但不一定想被摸肚子！" }
+];
+const quiz = [
+  { q:"猫对你慢慢眨眼，意思是？", o:["想打架","信任和亲近","肚子饿"], a:1 },
+  { q:"猫盯着窗外的鸟，发出“咔咔咔”，是在？", o:["兴奋又够不着","生病了","打招呼"], a:0 },
+  { q:"尾巴竖得笔直、尖端微弯，代表？", o:["心情很好","生气","害怕"], a:0 },
+  { q:"猫露出肚皮，一定是想被撸吗？", o:["一定是","不一定，主要是表示信任","是想打你"], a:1 },
+  { q:"耳朵压平向后（飞机耳）说明？", o:["很放松","害怕或有攻击意图","想睡觉"], a:1 },
+  { q:"猫发出“哈——”的嘶嘶声，你该？", o:["靠近安抚","保持距离，让它冷静","大声呵斥"], a:1 }
+];
+
+// 用 WebAudio 合成示意音（不是真实录音）：声带声源 + 共振峰滤波模拟“喵”，噪声模拟哈气，低频调幅模拟咕噜
+let ctx, noiseBuf;
+function noise() {
+  if (!noiseBuf) {
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const n = ctx.createBufferSource(); n.buffer = noiseBuf; n.loop = true; return n;
+}
+function env(g, t, d, peak, att) {
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + att);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+}
+// 一声“喵”：基频先升后降，共振峰（元音）从 m→i→a→o 滑动
+function meow(t, p, d, vol = 0.5) {
+  const o = ctx.createOscillator(); o.type = "sawtooth";
+  o.frequency.setValueAtTime(p * 0.85, t);
+  o.frequency.linearRampToValueAtTime(p * 1.15, t + d * 0.35);
+  o.frequency.linearRampToValueAtTime(p * 0.7, t + d);
+  const vib = ctx.createOscillator(), vg = ctx.createGain();   // 轻微颤动更像活物
+  vib.frequency.value = 6; vg.gain.value = p * 0.02; vib.connect(vg).connect(o.frequency);
+  const f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter();
+  f1.type = f2.type = "bandpass"; f1.Q.value = 5; f2.Q.value = 8;
+  f1.frequency.setValueAtTime(450, t); f1.frequency.linearRampToValueAtTime(900, t + d * 0.4); f1.frequency.linearRampToValueAtTime(600, t + d);
+  f2.frequency.setValueAtTime(1100, t); f2.frequency.linearRampToValueAtTime(2600, t + d * 0.4); f2.frequency.linearRampToValueAtTime(1200, t + d);
+  const g = ctx.createGain(); env(g, t, d, vol, Math.min(0.05, d / 4));
+  o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g); g.connect(ctx.destination);
+  o.start(t); vib.start(t); o.stop(t + d); vib.stop(t + d);
+}
+function play(s) {
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const t = ctx.currentTime;
+  if (s.type === "purr") {            // 咕噜：低频声源被 ~25Hz 调幅 + 低通
+    const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = 55;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 350;
+    const g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    g.gain.value = 0.25; lfo.frequency.value = 25; lg.gain.value = 0.25;
+    lfo.connect(lg).connect(g.gain);
+    const n = noise(), nf = ctx.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.value = 250;
+    const ng = ctx.createGain(); ng.gain.value = 0.15; n.connect(nf).connect(ng).connect(g);
+    const m = ctx.createGain(); env(m, t, s.d, 0.8, 0.15);
+    o.connect(lp).connect(g).connect(m).connect(ctx.destination);
+    o.start(t); lfo.start(t); n.start(t); o.stop(t + s.d); lfo.stop(t + s.d); n.stop(t + s.d);
+  } else if (s.type === "hiss") {     // 哈气：带通白噪声
+    const n = noise(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 5500; bp.Q.value = 0.7;
+    const g = ctx.createGain(); env(g, t, s.d, 0.5, 0.06);
+    n.connect(bp).connect(g).connect(ctx.destination); n.start(t); n.stop(t + s.d);
+  } else if (s.trem) {                // 咔咔咔：一串短促高音
+    for (let i = 0; i < 8; i++) meow(t + i * s.d / 8, s.p * (i % 2 ? 1 : 1.1), s.d / 12, 0.35);
+  } else if (s.type === "yowl") {     // 低沉嚎叫：低音 + 明显颤动
+    meow(t, s.p, s.d, 0.5);
+  } else meow(t, s.p, s.d);
+}
+
+function render(id, list, withSound) {
+  document.getElementById(id).innerHTML = list.map((x, i) => `
+    <div class="card"><div class="emoji">${x.e}</div><h3>${x.n}</h3><p>${x.m}</p>
+    ${withSound ? `<button data-i="${i}">▶ 试听示意音</button>` : ""}</div>`).join("");
+}
+render("sounds", sounds, true);
+render("body", body, false);
+document.getElementById("sounds").addEventListener("click", e => {
+  const b = e.target.closest("button[data-i]");
+  if (b) play(sounds[b.dataset.i]);
+});
+
+nav = document.querySelectorAll("nav button");
+nav.forEach(b => b.onclick = () => {
+  nav.forEach(x => x.classList.toggle("active", x === b));
+  ["sounds","body","quiz"].forEach(id => document.getElementById(id).classList.toggle("hidden", id !== b.dataset.tab));
+  if (b.dataset.tab === "quiz") startQuiz();
+});
+
+let qi = 0, score = 0;
+function startQuiz() { qi = 0; score = 0; showQ(); }
+function showQ() {
+  const box = document.getElementById("quiz");
+  if (qi >= quiz.length) {
+    box.innerHTML = `<div class="card"><h2>完成！得分 ${score} / ${quiz.length}</h2>
+      <p>${score >= 5 ? "你已经是合格的猫语翻译官 🎉" : "再看看词典，多观察你家猫吧 🐾"}</p>
+      <button class="next" onclick="startQuiz()">再来一次</button></div>`;
+    return;
+  }
+  const q = quiz[qi];
+  box.innerHTML = `<div class="card"><div class="score">第 ${qi+1} / ${quiz.length} 题</div>
+    <div class="quiz-q">${q.q}</div>
+    ${q.o.map((t, i) => `<button class="opt" data-i="${i}">${t}</button>`).join("")}
+    <button class="next hidden" id="nx">${qi === quiz.length - 1 ? "查看结果" : "下一题"}</button></div>`;
+  box.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    box.querySelectorAll(".opt").forEach((x, j) => { x.disabled = true; if (j === q.a) x.classList.add("right"); });
+    if (i === q.a) score++; else b.classList.add("wrong");
+    document.getElementById("nx").classList.remove("hidden");
+  });
+  document.getElementById("nx").onclick = () => { qi++; showQ(); };
+}
+</script>
+</body>
+</html>
